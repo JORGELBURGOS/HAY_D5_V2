@@ -932,249 +932,306 @@ function generatePDF() {
         showNotification('No hay evaluación para generar PDF', 'error');
         return;
     }
-    
+
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
+
     const margin = 20;
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    
-    // Datos de la evaluación
+    const contentWidth = pageWidth - 2 * margin;
     const evalData = window.currentEvaluation;
     const profileType = determineProfileType(evalData.scores.knowHow, evalData.scores.problemSolving);
     const profileInfo = evaluationData.profileTypes[profileType];
-    
-    // Configuración inicial
+
+    // Estilos base
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    
-    // Función para agregar encabezado
-    const addHeader = () => {
-        doc.setFillColor(67, 97, 238);
-        doc.rect(0, 0, pageWidth, 20, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(12);
-        doc.text('Evaluación de Puestos - HR Evaluation Pro', margin, 15);
-        doc.setTextColor(0, 0, 0);
-    };
-    
-    // Función para agregar pie de página
-    const addFooter = (pageNumber) => {
-        doc.setFillColor(245, 247, 250);
-        doc.rect(0, pageHeight - 20, pageWidth, 20, 'F');
-        doc.setTextColor(100, 100, 100);
+    doc.setTextColor(0, 0, 0);
+
+    // Función para agregar encabezado con logo
+    const addHeader = (pageNumber) => {
+        // Logo (reemplazar con la URL correcta del logo)
+        const logoUrl = 'https://ejemplo.com/logo.png';
+        try {
+            doc.addImage(logoUrl, 'PNG', margin, 10, 40, 15);
+        } catch (e) {
+            console.error('Error al cargar el logo:', e);
+            doc.setFontSize(16);
+            doc.setTextColor(67, 97, 238);
+            doc.text('HR Evaluation Pro', margin, 20);
+        }
+
         doc.setFontSize(10);
-        doc.text(`Página ${pageNumber}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
-        doc.text(`Generado el ${new Date().toLocaleDateString()}`, margin, pageHeight - 10);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Página ${pageNumber}`, pageWidth - margin, 20, { align: 'right' });
+        doc.text(`Generado el ${new Date().toLocaleDateString()}`, margin, 20);
         doc.setTextColor(0, 0, 0);
     };
-    
+
+    // Función para agregar pie de página
+    const addFooter = () => {
+        doc.setFontSize(8);
+        doc.setTextColor(100, 100, 100);
+        doc.text('© HR Evaluation Pro - Todos los derechos reservados', pageWidth / 2, pageHeight - 10, { align: 'center' });
+    };
+
     // PORTADA
-    addHeader();
+    addHeader(1);
     doc.setFontSize(24);
     doc.setTextColor(67, 97, 238);
-    doc.text('Evaluación de Puesto', pageWidth / 2, 60, { align: 'center' });
-    
+    doc.text('EVALUACIÓN DE PUESTO', pageWidth / 2, 50, { align: 'center' });
+
+    // Información básica
     doc.setFontSize(16);
     doc.setTextColor(0, 0, 0);
-    doc.text(`Puesto: ${evalData.jobTitle}`, pageWidth / 2, 80, { align: 'center' });
-    
+    doc.text(`Puesto: ${evalData.jobTitle}`, pageWidth / 2, 70, { align: 'center' });
     doc.setFontSize(14);
-    doc.text(`Fecha de evaluación: ${new Date(evalData.evaluationDate).toLocaleDateString()}`, pageWidth / 2, 90, { align: 'center' });
-    
-    // Círculo de puntaje en portada
-    doc.setDrawColor(67, 97, 238);
+    doc.text(`Fecha de evaluación: ${new Date(evalData.evaluationDate).toLocaleDateString()}`, pageWidth / 2, 80, { align: 'center' });
+
+    // Círculo de puntaje
+    const centerX = pageWidth / 2;
+    const centerY = 120;
+    const radius = 30;
+    const maxScore = 1600;
+    const scorePercentage = (evalData.scores.total / maxScore) * 100;
+
+    // Dibujar círculo de fondo
+    doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(8);
-    const circleRadius = 30;
-    const circleX = pageWidth / 2;
-    const circleY = 130;
-    doc.circle(circleX, circleY, circleRadius, 'D');
-    
+    doc.circle(centerX, centerY, radius, 'D');
+
+    // Dibujar arco de progreso
+    doc.setDrawColor(67, 97, 238);
+    const circumference = 2 * Math.PI * radius;
+    const arcLength = (scorePercentage / 100) * circumference;
+    doc.ellipse(centerX, centerY, radius, radius, 0, 0, (arcLength / circumference) * 360, 'D');
+
+    // Texto del puntaje
     doc.setFontSize(24);
-    doc.text(evalData.scores.total.toString(), circleX, circleY + 5, { align: 'center' });
-    
-    doc.setFontSize(14);
-    doc.text('Puntaje Total', circleX, circleY + 25, { align: 'center' });
-    
-    doc.setFontSize(12);
-    doc.text(`Nivel: ${evalData.level.level}`, pageWidth / 2, 180, { align: 'center' });
-    doc.text(`Perfil: ${profileInfo.name}`, pageWidth / 2, 190, { align: 'center' });
-    
-    addFooter(1);
-    doc.addPage();
-    
-    // RESUMEN EJECUTIVO
-    addHeader();
-    doc.setFontSize(16);
     doc.setTextColor(67, 97, 238);
-    doc.text('Resumen Ejecutivo', margin, 30);
-    
+    doc.text(evalData.scores.total.toString(), centerX, centerY + 5, { align: 'center' });
+    doc.setFontSize(12);
+    doc.text('Puntaje Total', centerX, centerY + 20, { align: 'center' });
+
+    // Información de nivel y perfil
+    doc.setFontSize(14);
+    doc.text(`Nivel: ${evalData.level.level}`, pageWidth / 2, 160, { align: 'center' });
+    doc.text(`Perfil: ${profileInfo.name}`, pageWidth / 2, 170, { align: 'center' });
+
+    addFooter();
+    doc.addPage();
+
+    // DESCRIPCIÓN DEL PUESTO (página completa)
+    addHeader(2);
+    doc.setFontSize(18);
+    doc.setTextColor(67, 97, 238);
+    doc.text('DESCRIPCIÓN DEL PUESTO', margin, 30);
+
+    // Descripción
     doc.setFontSize(12);
     doc.setTextColor(0, 0, 0);
-    
-    // Descripción del puesto
     doc.setFont(undefined, 'bold');
-    doc.text('Descripción del Puesto:', margin, 45);
+    doc.text('Descripción:', margin, 40);
     doc.setFont(undefined, 'normal');
-    const descriptionLines = doc.splitTextToSize(evalData.jobDescription || 'No especificado', pageWidth - 2 * margin);
-    doc.text(descriptionLines, margin, 55);
-    
+    const descriptionLines = doc.splitTextToSize(evalData.jobDescription || 'No especificado', contentWidth);
+    doc.text(descriptionLines, margin, 50);
+
     // Responsabilidades
     doc.setFont(undefined, 'bold');
-    doc.text('Responsabilidades Principales:', margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 20 : 75);
+    doc.text('Responsabilidades Principales:', margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 20 : 70);
     doc.setFont(undefined, 'normal');
-    const responsibilitiesLines = doc.splitTextToSize(evalData.jobResponsibilities || 'No especificado', pageWidth - 2 * margin);
-    doc.text(responsibilitiesLines, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 30 : 85);
+    const responsibilitiesLines = doc.splitTextToSize(evalData.jobResponsibilities || 'No especificado', contentWidth);
+    doc.text(responsibilitiesLines, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 30 : 80);
+
+    addFooter();
+    doc.addPage();
+
+    // RESULTADOS DE EVALUACIÓN
+    addHeader(3);
+    doc.setFontSize(18);
+    doc.setTextColor(67, 97, 238);
+    doc.text('RESULTADOS DE EVALUACIÓN', margin, 30);
+
+    // Gráfico radial
+    const radarChartData = {
+        labels: ['Know-How', 'Solución Problemas', 'Responsabilidad'],
+        datasets: [{
+            data: [
+                evalData.scores.knowHow / 1056 * 100,
+                evalData.scores.problemSolving / 1056 * 100,
+                evalData.scores.responsibility / 1600 * 100
+            ],
+            backgroundColor: 'rgba(67, 97, 238, 0.2)',
+            borderColor: 'rgba(67, 97, 238, 1)',
+            borderWidth: 2
+        }]
+    };
+
+    // Crear gráfico radial (usando html2canvas para capturar el gráfico)
+    const radarCanvas = document.createElement('canvas');
+    radarCanvas.width = 400;
+    radarCanvas.height = 400;
+    const radarCtx = radarCanvas.getContext('2d');
     
+    new Chart(radarCtx, {
+        type: 'radar',
+        data: radarChartData,
+        options: {
+            scale: {
+                ticks: {
+                    beginAtZero: true,
+                    max: 100,
+                    min: 0
+                }
+            },
+            elements: {
+                line: {
+                    tension: 0
+                }
+            }
+        }
+    });
+
+    // Agregar gráfico al PDF
+    doc.addImage(radarCanvas.toDataURL(), 'PNG', margin, 40, contentWidth / 2, contentWidth / 2);
+
     // Tabla de puntajes
     doc.autoTable({
-        startY: doc.previousAutoTable ? doc.previousAutoTable.finalY + 50 : 120,
-        head: [['Componente', 'Puntaje', 'Porcentaje']],
+        startY: 40,
+        startX: margin + contentWidth / 2 + 10,
+        head: [['Componente', 'Puntaje', '%']],
         body: [
             ['Know-How', evalData.scores.knowHow, `${Math.round((evalData.scores.knowHow / 1056) * 100)}%`],
-            ['Solución de Problemas', evalData.scores.problemSolving, `${Math.round((evalData.scores.problemSolving / 1056) * 100)}%`],
+            ['Solución Problemas', evalData.scores.problemSolving, `${Math.round((evalData.scores.problemSolving / 1056) * 100)}%`],
             ['Responsabilidad', evalData.scores.responsibility, `${Math.round((evalData.scores.responsibility / 1600) * 100)}%`],
             ['TOTAL', evalData.scores.total, `${Math.round((evalData.scores.total / 1600) * 100)}%`]
         ],
         theme: 'grid',
         headStyles: {
             fillColor: [67, 97, 238],
-            textColor: [255, 255, 255]
+            textColor: [255, 255, 255],
+            fontSize: 10
         },
-        didDrawPage: () => addFooter(2)
+        bodyStyles: {
+            fontSize: 9
+        },
+        margin: { top: 40 }
     });
-    
-    doc.addPage();
-    
-    // DETALLE DE KNOW-HOW
-    addHeader();
-    doc.setFontSize(16);
-    doc.setTextColor(67, 97, 238);
-    doc.text('Detalle de Know-How', margin, 30);
-    
-    // Obtener datos de los selects
-    const techLevel = document.getElementById('technicalCompetence').value;
-    const commLevel = document.getElementById('communicationLevel').value;
-    const intLevel = document.getElementById('integrationScope').value;
-    
+
+    // Descripción del nivel
     doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    
-    // Competencia Técnica
-    doc.setFont(undefined, 'bold');
-    doc.text('1. Competencia Técnica:', margin, 45);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Nivel seleccionado: ${techLevel}`, margin, 55);
-    
-    const techDescription = evaluationData.knowHow.descriptions.technical[techLevel];
-    const techDescLines = doc.splitTextToSize(techDescription, pageWidth - 2 * margin);
-    doc.text(techDescLines, margin, 65);
-    
-    // Nivel de Comunicación
-    doc.setFont(undefined, 'bold');
-    doc.text('2. Nivel de Comunicación:', margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 30 : 100);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Nivel seleccionado: ${commLevel}`, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 40 : 110);
-    
-    const commDescription = evaluationData.knowHow.descriptions.communication[commLevel];
-    const commDescLines = doc.splitTextToSize(commDescription, pageWidth - 2 * margin);
-    doc.text(commDescLines, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 50 : 120);
-    
-    // Ámbito de Integración
-    doc.setFont(undefined, 'bold');
-    doc.text('3. Ámbito de Integración:', margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 30 : 150);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Nivel seleccionado: ${intLevel}`, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 40 : 160);
-    
-    const intDescription = evaluationData.knowHow.descriptions.integration[intLevel];
-    const intDescLines = doc.splitTextToSize(intDescription, pageWidth - 2 * margin);
-    doc.text(intDescLines, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 50 : 170);
-    
-    addFooter(3);
+    doc.text(`Descripción del Nivel (${evalData.level.level}):`, margin, doc.lastAutoTable.finalY + 20);
+    const levelDescLines = doc.splitTextToSize(evalData.level.description, contentWidth);
+    doc.text(levelDescLines, margin, doc.lastAutoTable.finalY + 30);
+
+    // Descripción del perfil
+    doc.text(`Descripción del Perfil (${profileInfo.name}):`, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 50 : doc.lastAutoTable.finalY + 50);
+    const profileDescLines = doc.splitTextToSize(profileInfo.description, contentWidth);
+    doc.text(profileDescLines, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 60 : doc.lastAutoTable.finalY + 60);
+
+    addFooter();
     doc.addPage();
-    
-    // DETALLE DE SOLUCIÓN DE PROBLEMAS
-    addHeader();
-    doc.setFontSize(16);
+
+    // DETALLE DE PERSPECTIVAS
+    addHeader(4);
+    doc.setFontSize(18);
     doc.setTextColor(67, 97, 238);
-    doc.text('Detalle de Solución de Problemas', margin, 30);
-    
-    const compLevel = document.getElementById('problemComplexity').value;
-    const thinkLevel = document.getElementById('thinkingFreedom').value;
-    
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    
-    // Complejidad
-    doc.setFont(undefined, 'bold');
-    doc.text('1. Complejidad de las Situaciones:', margin, 45);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Nivel seleccionado: ${compLevel}`, margin, 55);
-    
-    const compDescription = evaluationData.problemSolving.descriptions.complexity[compLevel];
-    const compDescLines = doc.splitTextToSize(compDescription, pageWidth - 2 * margin);
-    doc.text(compDescLines, margin, 65);
-    
-    // Libertad de Pensamiento
-    doc.setFont(undefined, 'bold');
-    doc.text('2. Marco de Referencia - Libertad de Pensar:', margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 30 : 100);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Nivel seleccionado: ${thinkLevel}`, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 40 : 110);
-    
-    const thinkDescription = evaluationData.problemSolving.descriptions.thinkingFreedom[thinkLevel];
-    const thinkDescLines = doc.splitTextToSize(thinkDescription, pageWidth - 2 * margin);
-    doc.text(thinkDescLines, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 50 : 120);
-    
-    addFooter(4);
-    doc.addPage();
-    
-    // DETALLE DE RESPONSABILIDAD
-    addHeader();
-    doc.setFontSize(16);
-    doc.setTextColor(67, 97, 238);
-    doc.text('Detalle de Responsabilidad', margin, 30);
-    
-    const actionLevel = document.getElementById('actionFreedom').value;
-    const impactNature = document.getElementById('impactNature').value;
-    const impactMagnitude = document.getElementById('impactMagnitude').value;
-    
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    
-    // Libertad para Actuar
-    doc.setFont(undefined, 'bold');
-    doc.text('1. Libertad para Actuar:', margin, 45);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Nivel seleccionado: ${actionLevel}`, margin, 55);
-    
-    const actionDescription = evaluationData.responsibility.descriptions.freedom[actionLevel];
-    const actionDescLines = doc.splitTextToSize(actionDescription, pageWidth - 2 * margin);
-    doc.text(actionDescLines, margin, 65);
-    
-    // Naturaleza del Impacto
-    doc.setFont(undefined, 'bold');
-    doc.text('2. Naturaleza del Impacto:', margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 30 : 100);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Nivel seleccionado: ${impactNature}`, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 40 : 110);
-    
-    const natureDescription = evaluationData.responsibility.descriptions.impactNature[impactNature];
-    const natureDescLines = doc.splitTextToSize(natureDescription, pageWidth - 2 * margin);
-    doc.text(natureDescLines, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 50 : 120);
-    
-    // Magnitud del Impacto
-    doc.setFont(undefined, 'bold');
-    doc.text('3. Magnitud del Impacto:', margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 30 : 150);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Nivel seleccionado: ${impactMagnitude}`, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 40 : 160);
-    
-    const magnitudeDescription = evaluationData.responsibility.descriptions.magnitude[impactMagnitude];
-    const magnitudeDescLines = doc.splitTextToSize(magnitudeDescription, pageWidth - 2 * margin);
-    doc.text(magnitudeDescLines, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 50 : 170);
-    
-    addFooter(5);
-    
+    doc.text('DETALLE DE PERSPECTIVAS', margin, 30);
+
+    // Tabla de perspectivas
+    const perspectivesData = [
+        ['Know-How', 
+         document.getElementById('technicalCompetence').value, 
+         evaluationData.knowHow.descriptions.technical[document.getElementById('technicalCompetence').value],
+         document.getElementById('communicationLevel').value,
+         evaluationData.knowHow.descriptions.communication[document.getElementById('communicationLevel').value],
+         document.getElementById('integrationScope').value,
+         evaluationData.knowHow.descriptions.integration[document.getElementById('integrationScope').value]
+        ],
+        ['Solución de Problemas',
+         document.getElementById('problemComplexity').value,
+         evaluationData.problemSolving.descriptions.complexity[document.getElementById('problemComplexity').value],
+         document.getElementById('thinkingFreedom').value,
+         evaluationData.problemSolving.descriptions.thinkingFreedom[document.getElementById('thinkingFreedom').value],
+         '',
+         ''
+        ],
+        ['Responsabilidad',
+         document.getElementById('actionFreedom').value,
+         evaluationData.responsibility.descriptions.freedom[document.getElementById('actionFreedom').value],
+         document.getElementById('impactNature').value,
+         evaluationData.responsibility.descriptions.impactNature[document.getElementById('impactNature').value],
+         document.getElementById('impactMagnitude').value,
+         evaluationData.responsibility.descriptions.magnitude[document.getElementById('impactMagnitude').value]
+        ]
+    ];
+
+    doc.autoTable({
+        startY: 40,
+        head: [['Perspectiva', 'Componente', 'Nivel', 'Descripción']],
+        body: perspectivesData.flatMap(perspective => {
+            const rows = [];
+            // Primer componente
+            rows.push([
+                { content: perspective[0], rowSpan: perspective[0] === 'Know-How' ? 3 : perspective[0] === 'Solución de Problemas' ? 2 : 3 },
+                getComponentName(perspective[0], 1),
+                perspective[1],
+                { content: perspective[2], styles: { fontSize: 8 } }
+            ]);
+            
+            // Segundo componente
+            rows.push([
+                getComponentName(perspective[0], 2),
+                perspective[3],
+                { content: perspective[4], styles: { fontSize: 8 } }
+            ]);
+            
+            // Tercer componente (si existe)
+            if (perspective[5]) {
+                rows.push([
+                    getComponentName(perspective[0], 3),
+                    perspective[5],
+                    { content: perspective[6], styles: { fontSize: 8 } }
+                ]);
+            }
+            
+            return rows;
+        }),
+        theme: 'grid',
+        headStyles: {
+            fillColor: [67, 97, 238],
+            textColor: [255, 255, 255],
+            fontSize: 10
+        },
+        bodyStyles: {
+            fontSize: 9
+        },
+        columnStyles: {
+            0: { cellWidth: 25 },
+            1: { cellWidth: 35 },
+            2: { cellWidth: 15 },
+            3: { cellWidth: 'auto' }
+        },
+        didDrawPage: () => addFooter()
+    });
+
+    // Función auxiliar para nombres de componentes
+    function getComponentName(perspective, index) {
+        if (perspective === 'Know-How') {
+            return ['Competencia Técnica', 'Nivel Comunicación', 'Ámbito Integración'][index - 1];
+        } else if (perspective === 'Solución de Problemas') {
+            return ['Complejidad', 'Libertad Pensamiento', ''][index - 1];
+        } else {
+            return ['Libertad Actuar', 'Naturaleza Impacto', 'Magnitud Impacto'][index - 1];
+        }
+    }
+
     // Guardar PDF
-    doc.save(`Evaluacion_${evalData.jobTitle.replace(/\s+/g, '_')}.pdf`);
+    doc.save(`Evaluacion_${evalData.jobTitle.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`);
     showNotification('PDF generado correctamente', 'success');
 }
 
