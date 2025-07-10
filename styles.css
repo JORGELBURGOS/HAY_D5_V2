@@ -112,7 +112,6 @@ body {
     color: white;
 }
 
-/* Estilos para el logo de la empresa */
 .logo-container {
     position: absolute;
     bottom: 30px;
@@ -126,7 +125,7 @@ body {
     max-width: 80%;
     height: auto;
     object-fit: contain;
-    filter: brightness(0) invert(1); /* Para que el logo sea blanco */
+    filter: brightness(0) invert(1);
 }
 
 .main-content {
@@ -598,7 +597,6 @@ body {
     to { opacity: 0; }
 }
 
-/* Evaluaciones guardadas */
 .evaluation-item {
     padding: 15px;
     border-bottom: 1px solid #eee;
@@ -628,7 +626,6 @@ body {
     gap: 10px;
 }
 
-/* Reportes */
 .report-charts {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -643,7 +640,6 @@ body {
     box-shadow: var(--box-shadow);
 }
 
-/* Configuración */
 .checkbox-group {
     display: flex;
     align-items: center;
@@ -655,7 +651,6 @@ body {
     height: 18px;
 }
 
-/* Perfil Corto */
 .profile-info {
     margin-top: 10px;
 }
@@ -669,6 +664,22 @@ body {
 .profile-info p {
     color: #666;
     font-size: 14px;
+}
+
+/* Estilos para validación */
+input:invalid, textarea:invalid, .select-custom:invalid {
+    border-color: var(--danger-color) !important;
+}
+
+.invalid-field {
+    border-color: var(--danger-color) !important;
+    animation: shake 0.5s;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-5px); }
+    40%, 80% { transform: translateX(5px); }
 }
 
 @media (max-width: 1200px) {

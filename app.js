@@ -229,6 +229,109 @@ function showNotification(message, type = 'success') {
     }
 }
 
+// Función para validar campos requeridos por sección
+function validateSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    let isValid = true;
+    
+    // Validar inputs requeridos
+    const requiredInputs = section.querySelectorAll('[required]');
+    requiredInputs.forEach(input => {
+        if (!input.value.trim()) {
+            input.classList.add('invalid-field');
+            setTimeout(() => input.classList.remove('invalid-field'), 500);
+            input.style.borderColor = 'var(--danger-color)';
+            isValid = false;
+            
+            if (isValid === false) {
+                const label = input.previousElementSibling?.textContent || 'Campo';
+                showNotification(`Por favor complete el campo: ${label}`, 'error');
+            }
+        } else {
+            input.style.borderColor = '#ddd';
+        }
+    });
+    
+    // Validación especial para selects en cada sección
+    if (sectionId === '2-section') {
+        const technical = document.getElementById('technicalCompetence');
+        const communication = document.getElementById('communicationLevel');
+        const integration = document.getElementById('integrationScope');
+        
+        if (!technical.value) {
+            technical.classList.add('invalid-field');
+            setTimeout(() => technical.classList.remove('invalid-field'), 500);
+            technical.style.borderColor = 'var(--danger-color)';
+            isValid = false;
+            showNotification('Por favor seleccione el nivel de Competencia Técnica', 'error');
+        }
+        if (!communication.value) {
+            communication.classList.add('invalid-field');
+            setTimeout(() => communication.classList.remove('invalid-field'), 500);
+            communication.style.borderColor = 'var(--danger-color)';
+            isValid = false;
+            showNotification('Por favor seleccione el nivel de Comunicación', 'error');
+        }
+        if (!integration.value) {
+            integration.classList.add('invalid-field');
+            setTimeout(() => integration.classList.remove('invalid-field'), 500);
+            integration.style.borderColor = 'var(--danger-color)';
+            isValid = false;
+            showNotification('Por favor seleccione el Ámbito de Integración', 'error');
+        }
+    }
+    
+    if (sectionId === '3-section') {
+        const complexity = document.getElementById('problemComplexity');
+        const freedom = document.getElementById('thinkingFreedom');
+        
+        if (!complexity.value) {
+            complexity.classList.add('invalid-field');
+            setTimeout(() => complexity.classList.remove('invalid-field'), 500);
+            complexity.style.borderColor = 'var(--danger-color)';
+            isValid = false;
+            showNotification('Por favor seleccione la Complejidad de las Situaciones', 'error');
+        }
+        if (!freedom.value) {
+            freedom.classList.add('invalid-field');
+            setTimeout(() => freedom.classList.remove('invalid-field'), 500);
+            freedom.style.borderColor = 'var(--danger-color)';
+            isValid = false;
+            showNotification('Por favor seleccione el Marco de Referencia', 'error');
+        }
+    }
+    
+    if (sectionId === '4-section') {
+        const action = document.getElementById('actionFreedom');
+        const nature = document.getElementById('impactNature');
+        const magnitude = document.getElementById('impactMagnitude');
+        
+        if (!action.value) {
+            action.classList.add('invalid-field');
+            setTimeout(() => action.classList.remove('invalid-field'), 500);
+            action.style.borderColor = 'var(--danger-color)';
+            isValid = false;
+            showNotification('Por favor seleccione la Libertad para Actuar', 'error');
+        }
+        if (!nature.value) {
+            nature.classList.add('invalid-field');
+            setTimeout(() => nature.classList.remove('invalid-field'), 500);
+            nature.style.borderColor = 'var(--danger-color)';
+            isValid = false;
+            showNotification('Por favor seleccione la Naturaleza del Impacto', 'error');
+        }
+        if (!magnitude.value) {
+            magnitude.classList.add('invalid-field');
+            setTimeout(() => magnitude.classList.remove('invalid-field'), 500);
+            magnitude.style.borderColor = 'var(--danger-color)';
+            isValid = false;
+            showNotification('Por favor seleccione la Magnitud del Impacto', 'error');
+        }
+    }
+    
+    return isValid;
+}
+
 // Función para cambiar de sección
 function goToSection(sectionId) {
     document.querySelectorAll('.form-section').forEach(section => {
@@ -1138,6 +1241,18 @@ saveDialogStyle.textContent = `
     background: transparent;
     color: #666;
 }
+
+/* Estilos para campos inválidos */
+.invalid-field {
+    border-color: var(--danger-color) !important;
+    animation: shake 0.5s;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-5px); }
+    40%, 80% { transform: translateX(5px); }
+}
 `;
 document.head.appendChild(saveDialogStyle);
 
@@ -1180,11 +1295,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    document.getElementById('nextToKnowHow')?.addEventListener('click', () => goToSection('2-section'));
+    document.getElementById('nextToKnowHow')?.addEventListener('click', (e) => {
+        if (!validateSection('1-section')) {
+            e.preventDefault();
+            return;
+        }
+        goToSection('2-section');
+    });
+    
     document.getElementById('backToDescription')?.addEventListener('click', () => goToSection('1-section'));
-    document.getElementById('nextToProblemSolving')?.addEventListener('click', () => goToSection('3-section'));
+    
+    document.getElementById('nextToProblemSolving')?.addEventListener('click', (e) => {
+        if (!validateSection('2-section')) {
+            e.preventDefault();
+            return;
+        }
+        goToSection('3-section');
+    });
+    
     document.getElementById('backToKnowHow')?.addEventListener('click', () => goToSection('2-section'));
-    document.getElementById('nextToResponsibility')?.addEventListener('click', () => goToSection('4-section'));
+    
+    document.getElementById('nextToResponsibility')?.addEventListener('click', (e) => {
+        if (!validateSection('3-section')) {
+            e.preventDefault();
+            return;
+        }
+        goToSection('4-section');
+    });
+    
     document.getElementById('backToProblemSolving')?.addEventListener('click', () => goToSection('3-section'));
     
     document.getElementById('evaluateBtn')?.addEventListener('click', function(e) {
