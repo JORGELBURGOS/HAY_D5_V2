@@ -340,5 +340,66 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="app.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Navegación principal lateral
+    const navButtons = document.querySelectorAll('.sidebar button');
+    const contentSections = document.querySelectorAll('.content-section');
+
+    navButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const target = button.getAttribute('data-target');
+            contentSections.forEach(section => {
+                section.style.display = section.id === target ? 'block' : 'none';
+            });
+        });
+    });
+
+    // Flujo de evaluación paso a paso
+    const steps = [
+        'descripcionSection',
+        'knowHowSection',
+        'solucionProblemasSection',
+        'responsabilidadSection',
+        'resultadosSection'
+    ];
+    let currentStep = 0;
+
+    function showStep(index) {
+        steps.forEach((id, i) => {
+            const section = document.getElementById(id);
+            if (section) section.style.display = i === index ? 'block' : 'none';
+        });
+        // Actualiza progreso visual si hay uno
+        const progressSteps = document.querySelectorAll('.progress-step');
+        progressSteps.forEach((step, i) => {
+            step.classList.toggle('active', i <= index);
+        });
+    }
+
+    document.querySelectorAll('.btn-next').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                showStep(currentStep);
+            }
+        });
+    });
+
+    document.querySelectorAll('.btn-back').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (currentStep > 0) {
+                currentStep--;
+                showStep(currentStep);
+            }
+        });
+    });
+
+    // Mostrar primer paso al inicio
+    showStep(currentStep);
+});
+</script>
+
 </body>
 </html>
