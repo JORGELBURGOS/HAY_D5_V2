@@ -18,7 +18,8 @@ const evaluationData = {
             4: 3,
             5: 4,
             6: 5,
-            7: 6
+            7: 6,
+            8: 7
         },
         integration: {
             1: 0,
@@ -28,7 +29,8 @@ const evaluationData = {
             5: 4,
             6: 5,
             7: 6,
-            8: 7
+            8: 7,
+            9: 8
         },
         descriptions: {
             technical: {
