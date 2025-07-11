@@ -660,7 +660,7 @@ function calculateKnowHowScore() {
     return techScores[adjustedIndex];
 }
 
-// Función para calcular el puntaje de Solución de Problemas
+// Función para calcular el puntaje de Solución de Problemas (CORREGIDA)
 function calculateProblemSolvingScore(knowHowScore) {
     const complexityLevel = document.getElementById('problemComplexity').value;
     const thinkingFreedom = document.getElementById('thinkingFreedom').value;
@@ -678,7 +678,7 @@ function calculateProblemSolvingScore(knowHowScore) {
     return Math.round(knowHowScore * percentage);
 }
 
-// Función para calcular el puntaje de Responsabilidad
+// Función para calcular el puntaje de Responsabilidad (CORREGIDA)
 function calculateResponsibilityScore() {
     const freedomLevel = document.getElementById('actionFreedom').value;
     const impactNature = document.getElementById('impactNature').value;
@@ -926,81 +926,7 @@ function exportEvaluation(data, format = 'json') {
     }
 }
 
-// Función para generar PDF
-function generatePDF() {
-    if (!window.currentEvaluation) {
-        showNotification('No hay evaluación para generar PDF', 'error');
-        return;
-    }
-    
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    const profileType = determineProfileType(window.currentEvaluation.scores.knowHow, window.currentEvaluation.scores.problemSolving);
-    const profileInfo = evaluationData.profileTypes[profileType];
-    
-    doc.setFontSize(20);
-    doc.setTextColor(67, 97, 238);
-    doc.text('Evaluación de Puesto', 105, 20, { align: 'center' });
-    
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`Puesto: ${window.currentEvaluation.jobTitle}`, 20, 40);
-    doc.text(`Fecha de evaluación: ${new Date(window.currentEvaluation.evaluationDate).toLocaleDateString()}`, 20, 50);
-    
-    doc.setFontSize(14);
-    doc.setTextColor(67, 97, 238);
-    doc.text('Descripción del Puesto:', 20, 70);
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    const descriptionLines = doc.splitTextToSize(window.currentEvaluation.jobDescription || 'No especificado', 170);
-    doc.text(descriptionLines, 20, 80);
-    
-    doc.text('Responsabilidades Principales:', 20, doc.previousAutoTable ? doc.previousAutoTable.finalY + 20 : 100);
-    const responsibilitiesLines = doc.splitTextToSize(window.currentEvaluation.jobResponsibilities || 'No especificado', 170);
-    doc.text(responsibilitiesLines, 20, doc.previousAutoTable ? doc.previousAutoTable.finalY + 30 : 110);
-    
-    doc.setFontSize(16);
-    doc.setTextColor(67, 97, 238);
-    doc.text('Resultados de Evaluación', 20, doc.previousAutoTable ? doc.previousAutoTable.finalY + 50 : 140);
-    
-    doc.autoTable({
-        startY: doc.previousAutoTable ? doc.previousAutoTable.finalY + 60 : 150,
-        head: [['Componente', 'Puntaje']],
-        body: [
-            ['Know-How', window.currentEvaluation.scores.knowHow],
-            ['Solución de Problemas', window.currentEvaluation.scores.problemSolving],
-            ['Responsabilidad', window.currentEvaluation.scores.responsibility],
-            ['TOTAL', window.currentEvaluation.scores.total]
-        ],
-        theme: 'grid',
-        headStyles: {
-            fillColor: [67, 97, 238],
-            textColor: [255, 255, 255]
-        }
-    });
-    
-    doc.setFontSize(14);
-    doc.setTextColor(67, 97, 238);
-    doc.text('Perfil Corto:', 20, doc.lastAutoTable.finalY + 20);
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`Tipo: ${profileInfo.name}`, 20, doc.lastAutoTable.finalY + 30);
-    doc.text(`Descripción: ${profileInfo.description}`, 20, doc.lastAutoTable.finalY + 40);
-    
-    doc.setFontSize(14);
-    doc.setTextColor(67, 97, 238);
-    doc.text('Descripción del Nivel:', 20, doc.lastAutoTable.finalY + 60);
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    const levelLines = doc.splitTextToSize(window.currentEvaluation.level.description, 170);
-    doc.text(levelLines, 20, doc.lastAutoTable.finalY + 70);
-    
-    doc.save(`Evaluacion_${window.currentEvaluation.jobTitle.replace(/\s+/g, '_')}.pdf`);
-    showNotification('PDF generado correctamente', 'success');
-}
-
-// Función para mostrar diálogo de opciones de guardado
+// Función para mostrar opciones de guardado
 function showSaveOptionsDialog() {
     const dialog = document.createElement('div');
     dialog.className = 'save-dialog';
@@ -1009,50 +935,284 @@ function showSaveOptionsDialog() {
             <h3>Guardar Evaluación</h3>
             <p>Seleccione cómo desea guardar la evaluación:</p>
             <div class="options">
-                <button id="saveLocalBtn" class="btn btn-option">
-                    <i class="fas fa-laptop"></i> Solo en este navegador
+                <button class="btn btn-option" id="saveLocalBtn">
+                    <i class="fas fa-save"></i> Guardar en LocalStorage
                 </button>
-                <button id="saveCSVBtn" class="btn btn-option">
-                    <i class="fas fa-file-csv"></i> Guardar en archivo CSV
+                <button class="btn btn-option" id="saveCSVBtn">
+                    <i class="fas fa-file-csv"></i> Exportar a CSV
                 </button>
-                <button id="saveBothBtn" class="btn btn-option">
-                    <i class="fas fa-sync-alt"></i> En ambos formatos
-                </button>
-                <button id="saveCancelBtn" class="btn btn-cancel">
-                    <i class="fas fa-times"></i> Cancelar
+                <button class="btn btn-option" id="saveJSONBtn">
+                    <i class="fas fa-file-code"></i> Exportar a JSON
                 </button>
             </div>
+            <button class="btn btn-cancel" id="cancelSaveBtn">Cancelar</button>
         </div>
     `;
     
     document.body.appendChild(dialog);
     
-    document.getElementById('saveLocalBtn').addEventListener('click', () => {
+    // Event listeners para los botones del diálogo
+    document.getElementById('saveLocalBtn')?.addEventListener('click', () => {
         const result = saveEvaluationToLocal(window.currentEvaluation);
         handleSaveResult(result, 'local');
         dialog.remove();
     });
     
-    document.getElementById('saveCSVBtn').addEventListener('click', () => {
-        saveEvaluationsToLocalCSV();
+    document.getElementById('saveCSVBtn')?.addEventListener('click', () => {
+        exportEvaluation(window.currentEvaluation, 'csv');
         dialog.remove();
     });
     
-    document.getElementById('saveBothBtn').addEventListener('click', () => {
-        const localResult = saveEvaluationToLocal(window.currentEvaluation);
-        saveEvaluationsToLocalCSV();
+    document.getElementById('saveJSONBtn')?.addEventListener('click', () => {
+        exportEvaluation(window.currentEvaluation, 'json');
+        dialog.remove();
+    });
+    
+    document.getElementById('cancelSaveBtn')?.addEventListener('click', () => {
+        dialog.remove();
+    });
+}
+
+// Función para generar PDF COMPLETO con gráficos y detalles
+function generatePDF() {
+    if (!window.currentEvaluation) {
+        showNotification('No hay evaluación para generar PDF', 'error');
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const evalData = window.currentEvaluation;
+    const profileType = determineProfileType(evalData.scores.knowHow, evalData.scores.problemSolving);
+    const profileInfo = evaluationData.profileTypes[profileType];
+    const margin = 20;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const centerX = pageWidth / 2;
+
+    // --- CONFIGURACIÓN INICIAL ---
+    doc.setFont('helvetica', 'normal');
+
+    // --- PORTADA ---
+    doc.setFontSize(24);
+    doc.setTextColor(40, 53, 147);
+    doc.text('Evaluación de Puesto', centerX, 30, { align: 'center' });
+    
+    doc.setFontSize(16);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Puesto: ${evalData.jobTitle}`, margin, 50);
+    doc.text(`Fecha: ${new Date(evalData.evaluationDate).toLocaleDateString()}`, margin, 60);
+    
+    // Gráfico radial (simplificado para PDF)
+    const maxScore = 1056;
+    const scores = [
+        { label: 'Know-How', value: evalData.scores.knowHow, color: [67, 97, 238] },
+        { label: 'Solución Problemas', value: evalData.scores.problemSolving, color: [244, 63, 94] },
+        { label: 'Responsabilidad', value: evalData.scores.responsibility, color: [16, 185, 129] }
+    ];
+    
+    const radarRadius = 30;
+    const radarX = centerX;
+    const radarY = 100;
+    
+    // Dibujar ejes del gráfico radial
+    doc.setDrawColor(200, 200, 200);
+    for (let i = 0; i < 3; i++) {
+        doc.circle(radarX, radarY, radarRadius * (i + 1) / 3, 'D');
+    }
+    
+    // Dibujar datos
+    scores.forEach((score, i) => {
+        const angle = (i * (2 * Math.PI / scores.length)) - Math.PI / 2;
+        const scoreRadius = (score.value / maxScore) * radarRadius;
+        const x = radarX + scoreRadius * Math.cos(angle);
+        const y = radarY + scoreRadius * Math.sin(angle);
         
-        if (localResult.success) {
-            showNotification('Evaluación guardada en ambos formatos', 'success');
-        } else {
-            showNotification('Error al guardar localmente, pero CSV se generó', 'warning');
-        }
-        dialog.remove();
+        doc.setFillColor(score.color[0], score.color[1], score.color[2], 100);
+        doc.circle(x, y, 3, 'F');
+        
+        // Conectar al centro
+        if (i === 0) doc.moveTo(radarX, radarY);
+        doc.lineTo(x, y);
+        doc.stroke();
     });
     
-    document.getElementById('saveCancelBtn').addEventListener('click', () => {
-        dialog.remove();
+    // Leyenda
+    doc.setFontSize(10);
+    let legendY = radarY + radarRadius + 20;
+    scores.forEach(score => {
+        doc.setFillColor(score.color[0], score.color[1], score.color[2]);
+        doc.rect(margin, legendY - 3, 5, 5, 'F');
+        doc.text(`${score.label}: ${score.value} pts`, margin + 10, legendY);
+        legendY += 10;
     });
+
+    // --- DETALLES DEL PUESTO ---
+    doc.addPage();
+    doc.setFontSize(18);
+    doc.setTextColor(40, 53, 147);
+    doc.text('Descripción del Puesto', margin, 20);
+    
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    const jobDescLines = doc.splitTextToSize(evalData.jobDescription || 'No especificado', pageWidth - 2 * margin);
+    doc.text(jobDescLines, margin, 30);
+    
+    doc.setFontSize(14);
+    doc.text('Responsabilidades:', margin, 50);
+    doc.setFontSize(12);
+    const responsibilitiesLines = doc.splitTextToSize(evalData.jobResponsibilities || 'No especificado', pageWidth - 2 * margin);
+    doc.text(responsibilitiesLines, margin, 60);
+
+    // --- TABLA DE PUNTAJES ---
+    doc.addPage();
+    doc.setFontSize(18);
+    doc.setTextColor(40, 53, 147);
+    doc.text('Detalle de Puntajes', margin, 20);
+    
+    // Tabla de Know-How
+    const techLevel = document.getElementById('technicalCompetence').value;
+    const commLevel = document.getElementById('communicationLevel').value;
+    const intLevel = document.getElementById('integrationScope').value;
+    
+    doc.autoTable({
+        startY: 30,
+        head: [['Know-How', 'Selección', 'Puntaje']],
+        body: [
+            ['Competencia Técnica', techLevel, evalData.scores.knowHow],
+            ['Nivel Comunicación', commLevel, ''],
+            ['Ámbito Integración', intLevel, '']
+        ],
+        headStyles: { fillColor: [40, 53, 147], textColor: [255, 255, 255] }
+    });
+    
+    // Tabla de Solución de Problemas
+    const compLevel = document.getElementById('problemComplexity').value;
+    const thinkLevel = document.getElementById('thinkingFreedom').value;
+    
+    doc.autoTable({
+        startY: doc.previousAutoTable.finalY + 20,
+        head: [['Solución de Problemas', 'Selección', 'Puntaje']],
+        body: [
+            ['Complejidad', compLevel, evalData.scores.problemSolving],
+            ['Libertad Pensamiento', thinkLevel, '']
+        ],
+        headStyles: { fillColor: [40, 53, 147], textColor: [255, 255, 255] }
+    });
+    
+    // Tabla de Responsabilidad
+    const actionLevel = document.getElementById('actionFreedom').value;
+    const impactNature = document.getElementById('impactNature').value;
+    const impactMagnitude = document.getElementById('impactMagnitude').value;
+    
+    doc.autoTable({
+        startY: doc.previousAutoTable.finalY + 20,
+        head: [['Responsabilidad', 'Selección', 'Puntaje']],
+        body: [
+            ['Libertad para Actuar', actionLevel, evalData.scores.responsibility],
+            ['Naturaleza Impacto', impactNature, ''],
+            ['Magnitud Impacto', impactMagnitude, '']
+        ],
+        headStyles: { fillColor: [40, 53, 147], textColor: [255, 255, 255] }
+    });
+
+    // --- DESCRIPCIONES DE LAS SELECCIONES ---
+    doc.addPage();
+    doc.setFontSize(18);
+    doc.setTextColor(40, 53, 147);
+    doc.text('Explicación de Criterios', margin, 20);
+    
+    // Know-How: Competencia Técnica
+    doc.setFontSize(14);
+    doc.text('1. Know-How', margin, 30);
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Competencia Técnica:', margin, 40);
+    doc.setFont('helvetica', 'normal');
+    const techDesc = evaluationData.knowHow.descriptions.technical[techLevel];
+    doc.text(doc.splitTextToSize(techDesc, pageWidth - 2 * margin), margin, 50);
+    
+    // Know-How: Comunicación
+    doc.setFont('helvetica', 'bold');
+    doc.text('Nivel de Comunicación:', margin, 80);
+    doc.setFont('helvetica', 'normal');
+    const commDesc = evaluationData.knowHow.descriptions.communication[commLevel];
+    doc.text(doc.splitTextToSize(commDesc, pageWidth - 2 * margin), margin, 90);
+    
+    // Know-How: Integración
+    doc.setFont('helvetica', 'bold');
+    doc.text('Ámbito de Integración:', margin, 120);
+    doc.setFont('helvetica', 'normal');
+    const intDesc = evaluationData.knowHow.descriptions.integration[intLevel];
+    doc.text(doc.splitTextToSize(intDesc, pageWidth - 2 * margin), margin, 130);
+    
+    // Solución de Problemas: Complejidad
+    doc.addPage();
+    doc.setFontSize(14);
+    doc.text('2. Solución de Problemas', margin, 20);
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Complejidad de las Situaciones:', margin, 30);
+    doc.setFont('helvetica', 'normal');
+    const compDesc = evaluationData.problemSolving.descriptions.complexity[compLevel];
+    doc.text(doc.splitTextToSize(compDesc, pageWidth - 2 * margin), margin, 40);
+    
+    // Solución de Problemas: Libertad
+    doc.setFont('helvetica', 'bold');
+    doc.text('Marco de Referencia - Libertad de Pensar:', margin, 70);
+    doc.setFont('helvetica', 'normal');
+    const thinkDesc = evaluationData.problemSolving.descriptions.thinkingFreedom[thinkLevel];
+    doc.text(doc.splitTextToSize(thinkDesc, pageWidth - 2 * margin), margin, 80);
+    
+    // Responsabilidad: Libertad para Actuar
+    doc.addPage();
+    doc.setFontSize(14);
+    doc.text('3. Responsabilidad', margin, 20);
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Libertad para Actuar:', margin, 30);
+    doc.setFont('helvetica', 'normal');
+    const actionDesc = evaluationData.responsibility.descriptions.freedom[actionLevel];
+    doc.text(doc.splitTextToSize(actionDesc, pageWidth - 2 * margin), margin, 40);
+    
+    // Responsabilidad: Naturaleza Impacto
+    doc.setFont('helvetica', 'bold');
+    doc.text('Naturaleza del Impacto:', margin, 70);
+    doc.setFont('helvetica', 'normal');
+    const natureDesc = evaluationData.responsibility.descriptions.impactNature[impactNature];
+    doc.text(doc.splitTextToSize(natureDesc, pageWidth - 2 * margin), margin, 80);
+    
+    // Responsabilidad: Magnitud Impacto
+    doc.setFont('helvetica', 'bold');
+    doc.text('Magnitud del Impacto:', margin, 110);
+    doc.setFont('helvetica', 'normal');
+    const magnitudeDesc = evaluationData.responsibility.descriptions.magnitude[impactMagnitude];
+    doc.text(doc.splitTextToSize(magnitudeDesc, pageWidth - 2 * margin), margin, 120);
+    
+    // --- RESUMEN FINAL ---
+    doc.addPage();
+    doc.setFontSize(18);
+    doc.setTextColor(40, 53, 147);
+    doc.text('Resumen de Evaluación', margin, 20);
+    
+    doc.setFontSize(14);
+    doc.text(`Puesto: ${evalData.jobTitle}`, margin, 35);
+    doc.text(`Fecha: ${new Date(evalData.evaluationDate).toLocaleDateString()}`, margin, 45);
+    
+    doc.setFontSize(12);
+    doc.text(`Puntaje Total: ${evalData.scores.total}`, margin, 60);
+    doc.text(`Nivel: ${evalData.level.level}`, margin, 70);
+    doc.text(`Perfil: ${profileInfo.name}`, margin, 80);
+    
+    doc.text('Descripción del Nivel:', margin, 95);
+    doc.text(doc.splitTextToSize(evalData.level.description, pageWidth - 2 * margin), margin, 105);
+    
+    // Guardar PDF
+    doc.save(`Evaluacion_Completa_${evalData.jobTitle.replace(/\s+/g, '_')}.pdf`);
+    showNotification('PDF generado correctamente', 'success');
 }
 
 function handleSaveResult(result, type) {
@@ -1070,7 +1230,7 @@ function handleSaveResult(result, type) {
     }
 }
 
-// Función principal de evaluación
+// Función principal de evaluación (CORREGIDA)
 function evaluateJob() {
     // Validar campos requeridos primero
     const jobTitle = document.getElementById('jobTitle').value;
@@ -1173,89 +1333,6 @@ function resetEvaluation() {
     goToSection('1-section');
 }
 
-// Añadir CSS para el diálogo de guardado
-const saveDialogStyle = document.createElement('style');
-saveDialogStyle.textContent = `
-.save-dialog {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.save-dialog .dialog-content {
-    background: white;
-    padding: 25px;
-    border-radius: 10px;
-    width: 90%;
-    max-width: 500px;
-    box-shadow: 0 5px 30px rgba(0,0,0,0.2);
-    animation: dialogFadeIn 0.3s ease;
-}
-
-@keyframes dialogFadeIn {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.save-dialog h3 {
-    margin-top: 0;
-    color: #4361ee;
-}
-
-.save-dialog .options {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.btn-option {
-    text-align: left;
-    justify-content: flex-start;
-    padding: 12px 15px;
-    background: #f8f9fa;
-    color: #1a1a2e;
-    border: 1px solid #ddd;
-}
-
-.btn-option:hover {
-    background: #e9ecef;
-    transform: none;
-}
-
-.btn-option i {
-    margin-right: 10px;
-    width: 20px;
-    text-align: center;
-}
-
-.btn-cancel {
-    margin-top: 15px;
-    background: transparent;
-    color: #666;
-}
-
-/* Estilos para campos inválidos */
-.invalid-field {
-    border-color: var(--danger-color) !important;
-    animation: shake 0.5s;
-}
-
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    20%, 60% { transform: translateX(-5px); }
-    40%, 80% { transform: translateX(5px); }
-}
-`;
-document.head.appendChild(saveDialogStyle);
-
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
@@ -1330,7 +1407,9 @@ document.addEventListener('DOMContentLoaded', function() {
         evaluateJob();
     });
     
-    document.getElementById('saveBtn')?.addEventListener('click', () => {
+    // Corregido: Event listener para el botón Guardar Evaluación
+    document.getElementById('saveBtn')?.addEventListener('click', function(e) {
+        e.preventDefault();
         if (window.currentEvaluation) {
             showSaveOptionsDialog();
         } else {
@@ -1338,7 +1417,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    document.getElementById('exportBtn')?.addEventListener('click', () => {
+    document.getElementById('exportBtn')?.addEventListener('click', function(e) {
+        e.preventDefault();
         if (window.currentEvaluation) {
             exportEvaluation(window.currentEvaluation, 'json');
         } else {
@@ -1346,9 +1426,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Corregido: Event listener para el botón Generar PDF
+    document.getElementById('generatePdfBtn')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        generatePDF();
+    });
+    
     document.getElementById('newEvalBtn')?.addEventListener('click', resetEvaluation);
     document.getElementById('newEvaluationBtn')?.addEventListener('click', resetEvaluation);
-    document.getElementById('generatePdfBtn')?.addEventListener('click', generatePDF);
     document.getElementById('exportAllBtn')?.addEventListener('click', saveEvaluationsToLocalCSV);
     
     showContent('evaluationContent');
