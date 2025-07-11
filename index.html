@@ -7,14 +7,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
     <div class="preloader">
         <div class="loader"></div>
     </div>
-    <!-- Barra lateral -->
+    
     <nav class="sidebar">
         <div class="logo">
             <i class="fas fa-chart-line"></i>
@@ -32,7 +33,6 @@
     </nav>
 
     <main class="main-content">
-        <!-- Contenido de Inicio (Evaluación) -->
         <div id="evaluationContent">
             <header class="main-header">
                 <h1>Evaluación de Puestos</h1>
@@ -281,7 +281,6 @@
             </section>
         </div>
 
-        <!-- Contenido de Evaluaciones -->
         <div id="evaluationsContent" class="hidden-content">
             <header class="main-header">
                 <h1>Evaluaciones Guardadas</h1>
@@ -293,7 +292,6 @@
             </div>
         </div>
 
-        <!-- Contenido de Reportes -->
         <div id="reportsContent" class="hidden-content">
             <header class="main-header">
                 <h1>Reportes y Estadísticas</h1>
@@ -313,7 +311,6 @@
             </div>
         </div>
 
-        <!-- Contenido de Configuración -->
         <div id="settingsContent" class="hidden-content">
             <header class="main-header">
                 <h1>Configuración</h1>
