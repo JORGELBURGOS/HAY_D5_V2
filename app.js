@@ -660,7 +660,7 @@ function calculateKnowHowScore() {
     return techScores[adjustedIndex];
 }
 
-// Función para calcular el puntaje de Solución de Problemas
+// Función para calcular el puntaje de Solución de Problemas (CORREGIDA)
 function calculateProblemSolvingScore(knowHowScore) {
     const complexityLevel = document.getElementById('problemComplexity').value;
     const thinkingFreedom = document.getElementById('thinkingFreedom').value;
@@ -678,7 +678,7 @@ function calculateProblemSolvingScore(knowHowScore) {
     return Math.round(knowHowScore * percentage);
 }
 
-// Función para calcular el puntaje de Responsabilidad
+// Función para calcular el puntaje de Responsabilidad (CORREGIDA)
 function calculateResponsibilityScore() {
     const freedomLevel = document.getElementById('actionFreedom').value;
     const impactNature = document.getElementById('impactNature').value;
@@ -926,255 +926,248 @@ function exportEvaluation(data, format = 'json') {
     }
 }
 
-// Función para generar PDF
+// Función para generar PDF COMPLETO con gráficos y detalles
 function generatePDF() {
     if (!window.currentEvaluation) {
         showNotification('No hay evaluación para generar PDF', 'error');
         return;
     }
-    
+
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    const margin = 20;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    
-    // Datos de la evaluación
     const evalData = window.currentEvaluation;
     const profileType = determineProfileType(evalData.scores.knowHow, evalData.scores.problemSolving);
     const profileInfo = evaluationData.profileTypes[profileType];
-    
-    // Configuración inicial
+    const margin = 20;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const centerX = pageWidth / 2;
+
+    // --- CONFIGURACIÓN INICIAL ---
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
+
+    // --- PORTADA ---
+    // Logo (opcional - reemplazar con tu imagen base64 si necesitas)
+    // doc.addImage(logoData, 'PNG', margin, 15, 40, 20);
     
-    // Función para agregar encabezado
-    const addHeader = () => {
-        doc.setFillColor(67, 97, 238);
-        doc.rect(0, 0, pageWidth, 20, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(12);
-        doc.text('Evaluación de Puestos - HR Evaluation Pro', margin, 15);
-        doc.setTextColor(0, 0, 0);
-    };
-    
-    // Función para agregar pie de página
-    const addFooter = (pageNumber) => {
-        doc.setFillColor(245, 247, 250);
-        doc.rect(0, pageHeight - 20, pageWidth, 20, 'F');
-        doc.setTextColor(100, 100, 100);
-        doc.setFontSize(10);
-        doc.text(`Página ${pageNumber}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
-        doc.text(`Generado el ${new Date().toLocaleDateString()}`, margin, pageHeight - 10);
-        doc.setTextColor(0, 0, 0);
-    };
-    
-    // PORTADA
-    addHeader();
     doc.setFontSize(24);
-    doc.setTextColor(67, 97, 238);
-    doc.text('Evaluación de Puesto', pageWidth / 2, 60, { align: 'center' });
+    doc.setTextColor(40, 53, 147);
+    doc.text('Evaluación de Puesto', centerX, 30, { align: 'center' });
     
     doc.setFontSize(16);
     doc.setTextColor(0, 0, 0);
-    doc.text(`Puesto: ${evalData.jobTitle}`, pageWidth / 2, 80, { align: 'center' });
+    doc.text(`Puesto: ${evalData.jobTitle}`, margin, 50);
+    doc.text(`Fecha: ${new Date(evalData.evaluationDate).toLocaleDateString()}`, margin, 60);
     
-    doc.setFontSize(14);
-    doc.text(`Fecha de evaluación: ${new Date(evalData.evaluationDate).toLocaleDateString()}`, pageWidth / 2, 90, { align: 'center' });
+    // Gráfico radial (simplificado para PDF)
+    const maxScore = 1056;
+    const scores = [
+        { label: 'Know-How', value: evalData.scores.knowHow, color: [67, 97, 238] },
+        { label: 'Solución Problemas', value: evalData.scores.problemSolving, color: [244, 63, 94] },
+        { label: 'Responsabilidad', value: evalData.scores.responsibility, color: [16, 185, 129] }
+    ];
     
-    // Círculo de puntaje en portada
-    doc.setDrawColor(67, 97, 238);
-    doc.setLineWidth(8);
-    const circleRadius = 30;
-    const circleX = pageWidth / 2;
-    const circleY = 130;
-    doc.circle(circleX, circleY, circleRadius, 'D');
+    const radarRadius = 30;
+    const radarX = centerX;
+    const radarY = 100;
     
-    doc.setFontSize(24);
-    doc.text(evalData.scores.total.toString(), circleX, circleY + 5, { align: 'center' });
+    // Dibujar ejes del gráfico radial
+    doc.setDrawColor(200, 200, 200);
+    for (let i = 0; i < 3; i++) {
+        doc.circle(radarX, radarY, radarRadius * (i + 1) / 3, 'D');
+    }
     
-    doc.setFontSize(14);
-    doc.text('Puntaje Total', circleX, circleY + 25, { align: 'center' });
-    
-    doc.setFontSize(12);
-    doc.text(`Nivel: ${evalData.level.level}`, pageWidth / 2, 180, { align: 'center' });
-    doc.text(`Perfil: ${profileInfo.name}`, pageWidth / 2, 190, { align: 'center' });
-    
-    addFooter(1);
-    doc.addPage();
-    
-    // RESUMEN EJECUTIVO
-    addHeader();
-    doc.setFontSize(16);
-    doc.setTextColor(67, 97, 238);
-    doc.text('Resumen Ejecutivo', margin, 30);
-    
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    
-    // Descripción del puesto
-    doc.setFont(undefined, 'bold');
-    doc.text('Descripción del Puesto:', margin, 45);
-    doc.setFont(undefined, 'normal');
-    const descriptionLines = doc.splitTextToSize(evalData.jobDescription || 'No especificado', pageWidth - 2 * margin);
-    doc.text(descriptionLines, margin, 55);
-    
-    // Responsabilidades
-    doc.setFont(undefined, 'bold');
-    doc.text('Responsabilidades Principales:', margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 20 : 75);
-    doc.setFont(undefined, 'normal');
-    const responsibilitiesLines = doc.splitTextToSize(evalData.jobResponsibilities || 'No especificado', pageWidth - 2 * margin);
-    doc.text(responsibilitiesLines, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 30 : 85);
-    
-    // Tabla de puntajes
-    doc.autoTable({
-        startY: doc.previousAutoTable ? doc.previousAutoTable.finalY + 50 : 120,
-        head: [['Componente', 'Puntaje', 'Porcentaje']],
-        body: [
-            ['Know-How', evalData.scores.knowHow, `${Math.round((evalData.scores.knowHow / 1056) * 100)}%`],
-            ['Solución de Problemas', evalData.scores.problemSolving, `${Math.round((evalData.scores.problemSolving / 1056) * 100)}%`],
-            ['Responsabilidad', evalData.scores.responsibility, `${Math.round((evalData.scores.responsibility / 1600) * 100)}%`],
-            ['TOTAL', evalData.scores.total, `${Math.round((evalData.scores.total / 1600) * 100)}%`]
-        ],
-        theme: 'grid',
-        headStyles: {
-            fillColor: [67, 97, 238],
-            textColor: [255, 255, 255]
-        },
-        didDrawPage: () => addFooter(2)
+    // Dibujar datos
+    scores.forEach((score, i) => {
+        const angle = (i * (2 * Math.PI / scores.length)) - Math.PI / 2;
+        const scoreRadius = (score.value / maxScore) * radarRadius;
+        const x = radarX + scoreRadius * Math.cos(angle);
+        const y = radarY + scoreRadius * Math.sin(angle);
+        
+        doc.setFillColor(score.color[0], score.color[1], score.color[2], 100);
+        doc.circle(x, y, 3, 'F');
+        
+        // Conectar al centro
+        if (i === 0) doc.moveTo(radarX, radarY);
+        doc.lineTo(x, y);
+        doc.stroke();
     });
     
+    // Leyenda
+    doc.setFontSize(10);
+    let legendY = radarY + radarRadius + 20;
+    scores.forEach(score => {
+        doc.setFillColor(score.color[0], score.color[1], score.color[2]);
+        doc.rect(margin, legendY - 3, 5, 5, 'F');
+        doc.text(`${score.label}: ${score.value} pts`, margin + 10, legendY);
+        legendY += 10;
+    });
+
+    // --- DETALLES DEL PUESTO ---
     doc.addPage();
+    doc.setFontSize(18);
+    doc.setTextColor(40, 53, 147);
+    doc.text('Descripción del Puesto', margin, 20);
     
-    // DETALLE DE KNOW-HOW
-    addHeader();
-    doc.setFontSize(16);
-    doc.setTextColor(67, 97, 238);
-    doc.text('Detalle de Know-How', margin, 30);
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    const jobDescLines = doc.splitTextToSize(evalData.jobDescription || 'No especificado', pageWidth - 2 * margin);
+    doc.text(jobDescLines, margin, 30);
     
-    // Obtener datos de los selects
+    doc.setFontSize(14);
+    doc.text('Responsabilidades:', margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 20 : 50);
+    doc.setFontSize(12);
+    const responsibilitiesLines = doc.splitTextToSize(evalData.jobResponsibilities || 'No especificado', pageWidth - 2 * margin);
+    doc.text(responsibilitiesLines, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 30 : 60);
+
+    // --- TABLA DE PUNTAJES ---
+    doc.addPage();
+    doc.setFontSize(18);
+    doc.setTextColor(40, 53, 147);
+    doc.text('Detalle de Puntajes', margin, 20);
+    
+    // Tabla de Know-How
     const techLevel = document.getElementById('technicalCompetence').value;
     const commLevel = document.getElementById('communicationLevel').value;
     const intLevel = document.getElementById('integrationScope').value;
     
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
+    doc.autoTable({
+        startY: 30,
+        head: [['Know-How', 'Selección', 'Puntaje']],
+        body: [
+            ['Competencia Técnica', techLevel, evalData.scores.knowHow],
+            ['Nivel Comunicación', commLevel, ''],
+            ['Ámbito Integración', intLevel, '']
+        ],
+        headStyles: { fillColor: [40, 53, 147], textColor: [255, 255, 255] }
+    });
     
-    // Competencia Técnica
-    doc.setFont(undefined, 'bold');
-    doc.text('1. Competencia Técnica:', margin, 45);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Nivel seleccionado: ${techLevel}`, margin, 55);
-    
-    const techDescription = evaluationData.knowHow.descriptions.technical[techLevel];
-    const techDescLines = doc.splitTextToSize(techDescription, pageWidth - 2 * margin);
-    doc.text(techDescLines, margin, 65);
-    
-    // Nivel de Comunicación
-    doc.setFont(undefined, 'bold');
-    doc.text('2. Nivel de Comunicación:', margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 30 : 100);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Nivel seleccionado: ${commLevel}`, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 40 : 110);
-    
-    const commDescription = evaluationData.knowHow.descriptions.communication[commLevel];
-    const commDescLines = doc.splitTextToSize(commDescription, pageWidth - 2 * margin);
-    doc.text(commDescLines, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 50 : 120);
-    
-    // Ámbito de Integración
-    doc.setFont(undefined, 'bold');
-    doc.text('3. Ámbito de Integración:', margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 30 : 150);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Nivel seleccionado: ${intLevel}`, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 40 : 160);
-    
-    const intDescription = evaluationData.knowHow.descriptions.integration[intLevel];
-    const intDescLines = doc.splitTextToSize(intDescription, pageWidth - 2 * margin);
-    doc.text(intDescLines, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 50 : 170);
-    
-    addFooter(3);
-    doc.addPage();
-    
-    // DETALLE DE SOLUCIÓN DE PROBLEMAS
-    addHeader();
-    doc.setFontSize(16);
-    doc.setTextColor(67, 97, 238);
-    doc.text('Detalle de Solución de Problemas', margin, 30);
-    
+    // Tabla de Solución de Problemas
     const compLevel = document.getElementById('problemComplexity').value;
     const thinkLevel = document.getElementById('thinkingFreedom').value;
     
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
+    doc.autoTable({
+        startY: doc.previousAutoTable.finalY + 20,
+        head: [['Solución de Problemas', 'Selección', 'Puntaje']],
+        body: [
+            ['Complejidad', compLevel, evalData.scores.problemSolving],
+            ['Libertad Pensamiento', thinkLevel, '']
+        ],
+        headStyles: { fillColor: [40, 53, 147], textColor: [255, 255, 255] }
+    });
     
-    // Complejidad
-    doc.setFont(undefined, 'bold');
-    doc.text('1. Complejidad de las Situaciones:', margin, 45);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Nivel seleccionado: ${compLevel}`, margin, 55);
-    
-    const compDescription = evaluationData.problemSolving.descriptions.complexity[compLevel];
-    const compDescLines = doc.splitTextToSize(compDescription, pageWidth - 2 * margin);
-    doc.text(compDescLines, margin, 65);
-    
-    // Libertad de Pensamiento
-    doc.setFont(undefined, 'bold');
-    doc.text('2. Marco de Referencia - Libertad de Pensar:', margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 30 : 100);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Nivel seleccionado: ${thinkLevel}`, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 40 : 110);
-    
-    const thinkDescription = evaluationData.problemSolving.descriptions.thinkingFreedom[thinkLevel];
-    const thinkDescLines = doc.splitTextToSize(thinkDescription, pageWidth - 2 * margin);
-    doc.text(thinkDescLines, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 50 : 120);
-    
-    addFooter(4);
-    doc.addPage();
-    
-    // DETALLE DE RESPONSABILIDAD
-    addHeader();
-    doc.setFontSize(16);
-    doc.setTextColor(67, 97, 238);
-    doc.text('Detalle de Responsabilidad', margin, 30);
-    
+    // Tabla de Responsabilidad
     const actionLevel = document.getElementById('actionFreedom').value;
     const impactNature = document.getElementById('impactNature').value;
     const impactMagnitude = document.getElementById('impactMagnitude').value;
     
+    doc.autoTable({
+        startY: doc.previousAutoTable.finalY + 20,
+        head: [['Responsabilidad', 'Selección', 'Puntaje']],
+        body: [
+            ['Libertad para Actuar', actionLevel, evalData.scores.responsibility],
+            ['Naturaleza Impacto', impactNature, ''],
+            ['Magnitud Impacto', impactMagnitude, '']
+        ],
+        headStyles: { fillColor: [40, 53, 147], textColor: [255, 255, 255] }
+    });
+
+    // --- DESCRIPCIONES DE LAS SELECCIONES ---
+    doc.addPage();
+    doc.setFontSize(18);
+    doc.setTextColor(40, 53, 147);
+    doc.text('Explicación de Criterios', margin, 20);
+    
+    // Know-How: Competencia Técnica
+    doc.setFontSize(14);
+    doc.text('1. Know-How', margin, 30);
+    
     doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Competencia Técnica:', margin, 40);
+    doc.setFont('helvetica', 'normal');
+    const techDesc = evaluationData.knowHow.descriptions.technical[techLevel];
+    doc.text(doc.splitTextToSize(techDesc, pageWidth - 2 * margin), margin, 50);
     
-    // Libertad para Actuar
-    doc.setFont(undefined, 'bold');
-    doc.text('1. Libertad para Actuar:', margin, 45);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Nivel seleccionado: ${actionLevel}`, margin, 55);
+    // Know-How: Comunicación
+    doc.setFont('helvetica', 'bold');
+    doc.text('Nivel de Comunicación:', margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 20 : 80);
+    doc.setFont('helvetica', 'normal');
+    const commDesc = evaluationData.knowHow.descriptions.communication[commLevel];
+    doc.text(doc.splitTextToSize(commDesc, pageWidth - 2 * margin), margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 30 : 90);
     
-    const actionDescription = evaluationData.responsibility.descriptions.freedom[actionLevel];
-    const actionDescLines = doc.splitTextToSize(actionDescription, pageWidth - 2 * margin);
-    doc.text(actionDescLines, margin, 65);
+    // Know-How: Integración
+    doc.setFont('helvetica', 'bold');
+    doc.text('Ámbito de Integración:', margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 20 : 120);
+    doc.setFont('helvetica', 'normal');
+    const intDesc = evaluationData.knowHow.descriptions.integration[intLevel];
+    doc.text(doc.splitTextToSize(intDesc, pageWidth - 2 * margin), margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 30 : 130);
     
-    // Naturaleza del Impacto
-    doc.setFont(undefined, 'bold');
-    doc.text('2. Naturaleza del Impacto:', margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 30 : 100);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Nivel seleccionado: ${impactNature}`, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 40 : 110);
+    // Solución de Problemas: Complejidad
+    doc.addPage();
+    doc.setFontSize(14);
+    doc.text('2. Solución de Problemas', margin, 20);
     
-    const natureDescription = evaluationData.responsibility.descriptions.impactNature[impactNature];
-    const natureDescLines = doc.splitTextToSize(natureDescription, pageWidth - 2 * margin);
-    doc.text(natureDescLines, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 50 : 120);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Complejidad de las Situaciones:', margin, 30);
+    doc.setFont('helvetica', 'normal');
+    const compDesc = evaluationData.problemSolving.descriptions.complexity[compLevel];
+    doc.text(doc.splitTextToSize(compDesc, pageWidth - 2 * margin), margin, 40);
     
-    // Magnitud del Impacto
-    doc.setFont(undefined, 'bold');
-    doc.text('3. Magnitud del Impacto:', margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 30 : 150);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Nivel seleccionado: ${impactMagnitude}`, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 40 : 160);
+    // Solución de Problemas: Libertad
+    doc.setFont('helvetica', 'bold');
+    doc.text('Marco de Referencia - Libertad de Pensar:', margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 20 : 70);
+    doc.setFont('helvetica', 'normal');
+    const thinkDesc = evaluationData.problemSolving.descriptions.thinkingFreedom[thinkLevel];
+    doc.text(doc.splitTextToSize(thinkDesc, pageWidth - 2 * margin), margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 30 : 80);
     
-    const magnitudeDescription = evaluationData.responsibility.descriptions.magnitude[impactMagnitude];
-    const magnitudeDescLines = doc.splitTextToSize(magnitudeDescription, pageWidth - 2 * margin);
-    doc.text(magnitudeDescLines, margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 50 : 170);
+    // Responsabilidad: Libertad para Actuar
+    doc.addPage();
+    doc.setFontSize(14);
+    doc.text('3. Responsabilidad', margin, 20);
     
-    addFooter(5);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Libertad para Actuar:', margin, 30);
+    doc.setFont('helvetica', 'normal');
+    const actionDesc = evaluationData.responsibility.descriptions.freedom[actionLevel];
+    doc.text(doc.splitTextToSize(actionDesc, pageWidth - 2 * margin), margin, 40);
+    
+    // Responsabilidad: Naturaleza Impacto
+    doc.setFont('helvetica', 'bold');
+    doc.text('Naturaleza del Impacto:', margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 20 : 70);
+    doc.setFont('helvetica', 'normal');
+    const natureDesc = evaluationData.responsibility.descriptions.impactNature[impactNature];
+    doc.text(doc.splitTextToSize(natureDesc, pageWidth - 2 * margin), margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 30 : 80);
+    
+    // Responsabilidad: Magnitud Impacto
+    doc.setFont('helvetica', 'bold');
+    doc.text('Magnitud del Impacto:', margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 20 : 110);
+    doc.setFont('helvetica', 'normal');
+    const magnitudeDesc = evaluationData.responsibility.descriptions.magnitude[impactMagnitude];
+    doc.text(doc.splitTextToSize(magnitudeDesc, pageWidth - 2 * margin), margin, doc.previousAutoTable ? doc.previousAutoTable.finalY + 30 : 120);
+    
+    // --- RESUMEN FINAL ---
+    doc.addPage();
+    doc.setFontSize(18);
+    doc.setTextColor(40, 53, 147);
+    doc.text('Resumen de Evaluación', margin, 20);
+    
+    doc.setFontSize(14);
+    doc.text(`Puesto: ${evalData.jobTitle}`, margin, 35);
+    doc.text(`Fecha: ${new Date(evalData.evaluationDate).toLocaleDateString()}`, margin, 45);
+    
+    doc.setFontSize(12);
+    doc.text(`Puntaje Total: ${evalData.scores.total}`, margin, 60);
+    doc.text(`Nivel: ${evalData.level.level}`, margin, 70);
+    doc.text(`Perfil: ${profileInfo.name}`, margin, 80);
+    
+    doc.text('Descripción del Nivel:', margin, 95);
+    doc.text(doc.splitTextToSize(evalData.level.description, pageWidth - 2 * margin), margin, 105);
     
     // Guardar PDF
-    doc.save(`Evaluacion_${evalData.jobTitle.replace(/\s+/g, '_')}.pdf`);
+    doc.save(`Evaluacion_Completa_${evalData.jobTitle.replace(/\s+/g, '_')}.pdf`);
     showNotification('PDF generado correctamente', 'success');
 }
 
@@ -1193,7 +1186,7 @@ function handleSaveResult(result, type) {
     }
 }
 
-// Función principal de evaluación
+// Función principal de evaluación (CORREGIDA)
 function evaluateJob() {
     // Validar campos requeridos primero
     const jobTitle = document.getElementById('jobTitle').value;
