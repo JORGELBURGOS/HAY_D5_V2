@@ -1409,7 +1409,7 @@ document.addEventListener('DOMContentLoaded', function() {
         evaluateJob();
     });
     
-    // Corregido: Event listener para el botón Guardar Evaluación
+    // Event listener para el botón Guardar Evaluación (corregido)
     document.getElementById('saveBtn')?.addEventListener('click', function(e) {
         e.preventDefault();
         if (window.currentEvaluation) {
@@ -1428,7 +1428,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Corregido: Event listener para el botón Generar PDF
+    // Event listener para el botón Generar PDF (corregido)
     document.getElementById('generatePdfBtn')?.addEventListener('click', function(e) {
         e.preventDefault();
         generatePDF();
